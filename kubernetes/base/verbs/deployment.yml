@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: verbs
+  labels:
+    app.kubernetes.io/name: verbs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: verbs
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: verbs
+        app.kubernetes.io/part-of: ssi-kubernetes
+    spec:
+      containers:
+      - name: verbs
+        image: ghcr.io/kuruyia/ssi-kubernetes/words:latest
+        imagePullPolicy: Always
+        env:
+          - name: BIND_ADDRESS
+            value: "0.0.0.0:3000"
+          - name: KIND
+            value: "verbs"
+        ports:
+          - containerPort: 3000
+            name: api
