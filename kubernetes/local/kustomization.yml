@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: ssi-kubernetes
+resources:
+- ns.yml
+- ../base
+
+patches:
+- target:
+    group: networking.k8s.io
+    version: v1
+    kind: Ingress
+  path: aggregator/no-ssl-redirect.patch.yml

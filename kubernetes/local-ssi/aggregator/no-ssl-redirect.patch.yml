@@ -1,0 +1,3 @@
+- op: add
+  path: /metadata/annotations/ingress.kubernetes.io~1ssl-redirect
+  value: "false"
