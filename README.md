@@ -108,6 +108,69 @@ $ kubectl exec deploy/aggregator -n ssi-kubernetes -- id
 uid=1000 gid=3000 groups=3000,2000
 ```
 
+#### Add Istio Sidecar Injection - Mutation policy
+
+// TODO
+
+#### Verify Image - Admission policy
+
+This policy is defined in
+[`kubernetes/local-ssi/kyverno/verify-image-signature.yml`](kubernetes/local-ssi/kyverno/verify-image-signature.yml).
+
+After the container image is built [in the
+CI](https://github.com/Kuruyia/ssi-kubernetes/blob/2196e44dff3e865d02c3c52d6820814080ecb5aa/.github/workflows/on_push_main.yml#L94-L105),
+it is signed with [cosign](https://github.com/sigstore/cosign) using a private
+key supplied as a GitHub Actions secret.
+
+Kyverno then verifies the signature of all container images whose name begins
+with `ghcr.io/kuruyia/ssi-kubernetes/` against the corresponding public key,
+and rejects the pod if the signature is invalid.
+
+**How to test:** You can modify the public key given to Kyverno to an invalid
+one, and check that Kyverno prevents the pods from being run because they can
+no longer be verified:
+
+```sh
+# In the `kubernetes/local-ssi/` directory
+sed -i '' 's/MFkw/MFaa/g' kyverno/verify-image-signature.yml
+kubectl apply -k .
+kubectl delete pods -n ssi-kubernetes --all
+```
+
+Then, check the events in the app namespace with `kubectl events -n
+ssi-kubernetes`:
+
+```sh
+[...]
+2s (x15 over 90s)   Warning   FailedCreate       ReplicaSet/verbs-774478894f        Error creating: admission webhook "mutate.kyverno.svc-fail" denied the request: 
+
+resource Pod/ssi-kubernetes/ was blocked due to the following policies 
+
+verify-image:
+  verify-image: 'failed to verify image ghcr.io/kuruyia/ssi-kubernetes/words:latest:
+    .attestors[0].entries[0].keys: failed to load public key from PEM: pem to public
+    key: asn1: structure error: tags don''t match (16 vs {class:2 tag:26 length:19
+    isCompound:false}) {optional:false explicit:false application:false private:false
+    defaultValue:<nil> tag:<nil> stringType:0 timeType:0 set:false omitEmpty:false}
+    AlgorithmIdentifier @2'
+```
+
+As you can see, the pods are being blocked by Kyverno. You can also see that
+there are no pods in the app namespace:
+
+```sh
+$ kubectl get pods -n ssi-kubernetes
+No resources found in ssi-kubernetes namespace.
+```
+
+To revert the changes:
+
+```sh
+# In the `kubernetes/local-ssi/` directory
+git restore .
+kubectl apply -k .
+```
+
 ### Falco
 
 // TODO

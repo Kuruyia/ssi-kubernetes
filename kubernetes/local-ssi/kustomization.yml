@@ -8,6 +8,7 @@ namespace: ssi-kubernetes
 resources:
 - ns.yml
 - kyverno/add-securitycontext.yml
+- kyverno/verify-image-signature.yml
 - ../base
 
 patches:

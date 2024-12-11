@@ -1,0 +1,26 @@
+apiVersion: kyverno.io/v1
+kind: Policy
+metadata:
+  name: verify-image
+spec:
+  validationFailureAction: Enforce
+  background: false
+  rules:
+    - name: verify-image
+      match:
+        any:
+        - resources:
+            kinds:
+              - Pod
+      verifyImages:
+      - imageReferences:
+        - "ghcr.io/kuruyia/ssi-kubernetes/*"
+        mutateDigest: true
+        attestors:
+        - entries:
+          - keys:
+              publicKeys: |
+                -----BEGIN PUBLIC KEY-----
+                MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEt2qPm0cSGT4RQ4BXE1JARJ3/Vc0v
+                aHAy7zHsYXIII9JePau50BBHvqznl4zcYNjNXz/WO1sqZbL+jWD9oyGesA==
+                -----END PUBLIC KEY-----
