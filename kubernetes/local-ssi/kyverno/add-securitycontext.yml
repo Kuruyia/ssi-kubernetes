@@ -1,0 +1,38 @@
+apiVersion: kyverno.io/v1
+kind: Policy
+metadata:
+  name: add-default-securitycontext
+spec:
+  rules:
+  - name: add-default-pod-securitycontext
+    match:
+      any:
+      - resources:
+          kinds:
+          - Pod
+    mutate:
+      patchStrategicMerge:
+        spec:
+          securityContext:
+            +(runAsNonRoot): true
+            +(runAsUser): 1000
+            +(runAsGroup): 3000
+            +(fsGroup): 2000
+  - name: add-default-container-securitycontext
+    match:
+      any:
+      - resources:
+          kinds:
+          - Pod
+    mutate:
+      foreach:
+      - list: "request.object.spec.containers"
+        patchStrategicMerge:
+          spec:
+            containers:
+            - securityContext:
+                +(allowPrivilegeEscalation): false
+                +(readOnlyRootFilesystem): true
+                +(capabilities):
+                  drop:
+                    - ALL

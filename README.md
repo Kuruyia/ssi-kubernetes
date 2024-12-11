@@ -60,7 +60,53 @@ by running `curl http://localhost:8081/`. You should see a JSON response with a
 
 ### Kyverno
 
-// TODO
+#### Add Default securityContext - Mutation policy
+
+This policy is defined in
+[`kubernetes/local-ssi/kyverno/add-securitycontext.yml`](kubernetes/local-ssi/kyverno/add-securitycontext.yml).
+
+This adds the following configuration on the pod security context:
+- `runAsNonRoot: true`: requires the pod containers to run as non-root users
+- `runAsUser: 1000`: runs container processes with user ID 1000
+- `runAsGroup: 3000`: runs container processes with primary group ID 3000
+- `fsGroup: 2000`: the owner group ID of files in mounted volumes is 2000
+
+This adds the following configuration on the pod containers security context:
+- `allowPrivilegeEscalation: false`: forbids processes to gain more privileges
+  than their parent processes (for example, setuid/setgid binaries)
+- `readOnlyRootFilesystem: true`: mounts the root container filesystem as
+  read-only
+- `capabilities: drop: - ALL`: drops all Linux capabilities (privileged
+  operations)
+
+Those are default values for the security context, and will _not_ override
+values that would be defined in the resource itself.
+
+**How to test:** You can make sure that the `securityContext` is set correctly
+on one of the app pods:
+
+```sh
+$ kubectl get pods -n ssi-kubernetes -l 'app.kubernetes.io/name=aggregator' -o yaml | grep -A 4 securityContext
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+          - ALL
+--
+    securityContext:
+      fsGroup: 2000
+      runAsGroup: 3000
+      runAsNonRoot: true
+      runAsUser: 1000
+```
+
+Alternatively, you can, for instance, make sure that the container of an app
+deployment is running as the specified user/group:
+
+```sh
+$ kubectl exec deploy/aggregator -n ssi-kubernetes -- id
+uid=1000 gid=3000 groups=3000,2000
+```
 
 ### Falco
 
