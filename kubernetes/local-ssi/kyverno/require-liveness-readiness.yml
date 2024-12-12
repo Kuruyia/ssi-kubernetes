@@ -1,0 +1,26 @@
+apiVersion: kyverno.io/v1
+kind: Policy
+metadata:
+  name: require-liveness-readiness
+spec:
+  validationFailureAction: Enforce
+  rules:
+  - name: validate-probes
+    match:
+      any:
+      - resources:
+          kinds:
+          - Pod
+    validate:
+      message: "Liveness or readiness probes are required for all containers."
+      foreach:
+      - list: request.object.spec.containers[]
+        deny:
+          conditions:
+            all:
+            - key: livenessProbe
+              operator: AllNotIn
+              value: "{{ element.keys(@)[] }}"
+            - key: readinessProbe
+              operator: AllNotIn
+              value: "{{ element.keys(@)[] }}"

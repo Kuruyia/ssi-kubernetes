@@ -33,3 +33,13 @@ spec:
           requests:
             memory: "64Mi"
             cpu: "250m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 3010
+          periodSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 3010
+          periodSeconds: 5

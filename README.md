@@ -195,6 +195,30 @@ require-requests:
 
 As you can see, Kyverno blocks the change due to the missing resource requests.
 
+#### Require liveness or readiness probes - Admission policy
+
+This policy is defined in
+[`kubernetes/local-ssi/kyverno/require-liveness-readiness.yml`](kubernetes/local-ssi/kyverno/require-liveness-readiness.yml).
+
+Any pod that contains container which do not set either liveness or readiness
+probes will be prevented from running.
+
+**How to test:** You can try to patch one of the deployments of this app to
+remove the probes:
+
+```sh
+$ kubectl patch deploy aggregator -n ssi-kubernetes -p '{"spec":{"template":{"spec":{"containers":[{"name":"aggregator", "livenessProbe":null, "readinessProbe":null}]}}}}'
+Error from server: admission webhook "validate.kyverno.svc-fail" denied the request: 
+
+resource Deployment/ssi-kubernetes/aggregator was blocked due to the following policies 
+
+require-liveness-readiness:
+  autogen-validate-probes: 'validation failure: Liveness or readiness probes are required
+    for all containers.'
+```
+
+As you can see, Kyverno blocks the change due to the missing liveness probe.
+
 ### Falco
 
 // TODO

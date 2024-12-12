@@ -10,6 +10,7 @@ resources:
 - kyverno/add-securitycontext.yml
 - kyverno/verify-image-signature.yml
 - kyverno/require-requests.yml
+- kyverno/require-liveness-readiness.yml
 - ../base
 
 patches:
