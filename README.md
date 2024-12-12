@@ -40,7 +40,12 @@ helm install kyverno kyverno/kyverno -n kyverno --create-namespace
 # TODO
 
 # Istio
-# TODO
+helm repo add istio https://istio-release.storage.googleapis.com/charts
+helm repo update
+helm install istio-base istio/base -n istio-system --set defaultRevision=default --create-namespace
+helm install istiod istio/istiod -n istio-system --wait
+kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.24/samples/addons/kiali.yaml
+kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.24/samples/addons/prometheus.yaml
 ```
 
 ### Deploy the project
@@ -108,9 +113,29 @@ $ kubectl exec deploy/aggregator -n ssi-kubernetes -- id
 uid=1000 gid=3000 groups=3000,2000
 ```
 
-#### Add Istio Sidecar Injection - Mutation policy
+#### Add Istio labels - Mutation policy
 
-// TODO
+This policy is defined in
+[`kubernetes/local-ssi/kyverno/add-istio-labels.yml`](kubernetes/local-ssi/kyverno/add-istio-labels.yml).
+
+This adds two labels to the pods that are necessary for Istio to work
+correctly:
+
+- `app`: copied from the `app.kubernetes.io/name` label of the pod
+- `version`: copied from either image tag or digest of the first container in
+  the pod
+
+**How to test:** You can check that the app pods contain those two labels:
+
+```sh
+$ kubectl get pods -n ssi-kubernetes --show-labels             
+NAME                          READY   STATUS    RESTARTS   AGE    LABELS
+aggregator-85886f7d5c-jl5rg   2/2     Running   0          5m7s   app.kubernetes.io/name=aggregator,app.kubernetes.io/part-of=ssi-kubernetes,app=aggregator,pod-template-hash=85886f7d5c,security.istio.io/tlsMode=istio,service.istio.io/canonical-name=aggregator,service.istio.io/canonical-revision=latest,version=latest
+nouns-fc9978b9-llv7w          2/2     Running   0          5m6s   app.kubernetes.io/name=nouns,app.kubernetes.io/part-of=ssi-kubernetes,app=nouns,pod-template-hash=fc9978b9,security.istio.io/tlsMode=istio,service.istio.io/canonical-name=nouns,service.istio.io/canonical-revision=latest,version=latest
+verbs-5f9bb479b9-p5wlm        2/2     Running   0          5m5s   app.kubernetes.io/name=verbs,app.kubernetes.io/part-of=ssi-kubernetes,app=verbs,pod-template-hash=5f9bb479b9,security.istio.io/tlsMode=istio,service.istio.io/canonical-name=verbs,service.istio.io/canonical-revision=latest,version=latest
+```
+
+As you can see, all three pods contains the `app` and `version` labels.
 
 #### Verify Image - Admission policy
 
@@ -225,4 +250,27 @@ As you can see, Kyverno blocks the change due to the missing liveness probe.
 
 ### Istio
 
-// TODO
+Istio is installed in the `istio-system` namespace with the [Kiali web
+interface](https://istio.io/latest/docs/ops/integrations/kiali/) and a
+[Prometheus TSDB](https://istio.io/latest/docs/ops/integrations/prometheus/)
+that records metrics about apps that uses the service mesh.
+
+The `ssi-kubernetes` namespace that contains the pods of this project [is
+labeled with
+`istio-injection=enabled`](https://github.com/Kuruyia/ssi-kubernetes/blob/19e92c2a632596f9dffb8f85d92c9ae37cb916c6/kubernetes/local-ssi/ns.yml#L6),
+which tells Istio to inject a sidecar proxy container in each pod deployed in
+this namespace. Also, [a Kyverno policy](#Add-Istio-labels---Mutation-policy)
+adds the `app` and `version` labels to the pods for Istio to add contextual
+information to the collected metrics and telemetry.
+
+To see Istio in action, you can connect to the Kiali web interface by port
+forwarding its service with `kubectl port-forward svc/kiali 20001:20001 -n
+istio-system` and going to `localhost:20001` in a web browser.
+
+You can generate some traffic in the cluster by requesting the aggregator
+service at `localhost:8081`, and checking the Traffic Graph in Kiali:
+
+![Traffic Graph in Kiali](./docs/assets/kiali.png)
+
+As you can see, mTLS is enabled by default in Istio between the aggregator
+service and the nouns/verbs services.

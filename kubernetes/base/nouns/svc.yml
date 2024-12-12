@@ -8,4 +8,5 @@ spec:
   ports:
     - protocol: TCP
       port: 3000
-      targetPort: api
+      targetPort: http-api
+      name: http-api

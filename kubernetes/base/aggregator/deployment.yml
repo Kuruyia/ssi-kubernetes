@@ -28,7 +28,7 @@ spec:
             value: "http://verbs:3000"
         ports:
           - containerPort: 3010
-            name: api
+            name: http-api
         resources:
           requests:
             memory: "64Mi"
