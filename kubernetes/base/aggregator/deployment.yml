@@ -29,3 +29,7 @@ spec:
         ports:
           - containerPort: 3010
             name: api
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"

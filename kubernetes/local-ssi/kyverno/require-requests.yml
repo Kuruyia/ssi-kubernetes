@@ -1,0 +1,22 @@
+apiVersion: kyverno.io/v1
+kind: Policy
+metadata:
+  name: require-requests
+spec:
+  validationFailureAction: Enforce
+  rules:
+  - name: validate-resources
+    match:
+      any:
+      - resources:
+          kinds:
+          - Pod
+    validate:
+      message: "CPU and memory resource requests are required."
+      pattern:
+        spec:
+          containers:
+          - resources:
+              requests:
+                memory: "?*"
+                cpu: "?*"

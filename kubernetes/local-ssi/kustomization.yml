@@ -9,6 +9,7 @@ resources:
 - ns.yml
 - kyverno/add-securitycontext.yml
 - kyverno/verify-image-signature.yml
+- kyverno/require-requests.yml
 - ../base
 
 patches:

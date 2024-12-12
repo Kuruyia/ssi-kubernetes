@@ -27,3 +27,7 @@ spec:
         ports:
           - containerPort: 3000
             name: api
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"

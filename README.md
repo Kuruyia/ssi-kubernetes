@@ -171,6 +171,30 @@ git restore .
 kubectl apply -k .
 ```
 
+#### Require resource requests - Admission policy
+
+This policy is defined in
+[`kubernetes/local-ssi/kyverno/require-requests.yml`](kubernetes/local-ssi/kyverno/require-requests.yml).
+
+Any pod that contains container which do not set resource requests will be
+prevented from running.
+
+**How to test:** You can try to patch one of the deployments of this app to
+remove the resource requests:
+
+```sh
+$ kubectl patch deploy aggregator -n ssi-kubernetes -p '{"spec":{"template":{"spec":{"containers":[{"name":"aggregator", "resources":{"requests":null}}]}}}}'
+Error from server: admission webhook "validate.kyverno.svc-fail" denied the request: 
+
+resource Deployment/ssi-kubernetes/aggregator was blocked due to the following policies 
+
+require-requests:
+  autogen-validate-resources: 'validation error: CPU and memory resource requests
+    are required. rule autogen-validate-resources failed at path /spec/template/spec/containers/0/resources/requests/'
+```
+
+As you can see, Kyverno blocks the change due to the missing resource requests.
+
 ### Falco
 
 // TODO
