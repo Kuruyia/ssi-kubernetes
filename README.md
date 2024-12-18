@@ -37,7 +37,9 @@ helm repo update
 helm install kyverno kyverno/kyverno -n kyverno --create-namespace
 
 # Falco
-# TODO
+helm repo add falcosecurity https://falcosecurity.github.io/charts
+helm repo update
+helm install --replace falco --namespace falco --create-namespace --set tty=true --set falcosidekick.enabled=true --set falcosidekick.webui.enabled=true falcosecurity/falco
 
 # Istio
 helm repo add istio https://istio-release.storage.googleapis.com/charts
@@ -246,7 +248,25 @@ As you can see, Kyverno blocks the change due to the missing liveness probe.
 
 ### Falco
 
-// TODO
+Falco is installed in the `falco` namespace with the
+[Falcosidekick](https://github.com/falcosecurity/falcosidekick) and the
+[Falcosidekick-ui](https://github.com/falcosecurity/falcosidekick-ui)
+components, which can be used to push Falco events to various external services
+(such as Slack) and show those events on a web interface.
+
+To see Falco in action, we can first trigger one of Falco's predefined rule by
+reading a sensitive file inside of one of the application container: `kubectl
+exec -it $(kubectl get pods --selector=app=aggregator -n ssi-kubernetes -o
+name) -n ssi-kubernetes -- cat /etc/pam.conf`.
+
+Then, we can port forward the web interface with `kubectl port-forward
+svc/falco-falcosidekick-ui 2802:2802 -n falco` and going to `localhost:2802` in
+a web browser. The default credentials are `admin`/`admin`.
+
+Going into the "Events" tab, and searching for "pam.conf", the sensitive file
+we just read, we can see the event that we just triggered:
+
+![Event in Falco](./docs/assets/falco.png)
 
 ### Istio
 
