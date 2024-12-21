@@ -6,7 +6,10 @@ use error::AppError;
 use serde::{Deserialize, Serialize};
 use shadow_rs::shadow;
 use tokio::{net::TcpListener, signal};
-use tower_http::trace::TraceLayer;
+use tower_http::{
+    cors::{Any, CorsLayer},
+    trace::TraceLayer,
+};
 use tracing::{info, trace};
 
 mod error;
@@ -114,9 +117,12 @@ async fn main() -> Result<()> {
         verbs_address: cli.verbs_address.clone(),
     };
 
+    let cors = CorsLayer::new().allow_methods(Any).allow_origin(Any);
+
     let app = Router::new()
         .route("/", get(root))
         .layer(TraceLayer::new_for_http())
+        .layer(cors)
         .with_state(state);
 
     let listener = TcpListener::bind(cli.bind_address.clone())
